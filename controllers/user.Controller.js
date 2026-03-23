@@ -1,7 +1,7 @@
 const UserModel = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const secret = process.env.SECRET;
+const secret = process.env.JWT_SECRET;
 const cloudinary = require("../configs/cloudinary");
 
 require("dotenv").config();
@@ -34,8 +34,8 @@ exports.register = async (req, res) => {
 
         //save login in cookies
         if (user) { 
-            const secret = process.env.SECRET;
-            const node_mode = process.env.node_mode;
+            const secret = process.env.JWT_SECRET;
+            const node_mode = process.env.NODE_ENV;
             const token = jwt.sign({ userId: user._id }, secret, { expiresIn: "1d" });
             res.cookie("jwt", token, {
                 httpOnly: true, // XSS ATTACK
@@ -86,7 +86,7 @@ exports.login = async (req, res) => {
             }
 
             // Set Cookie
-            const node_mode = process.env.node_mode;
+            const node_mode = process.env.NODE_ENV;
             res.cookie("jwt", token, {
                 httpOnly: true, // XSS ATTACK
                 secure: node_mode !== "development",

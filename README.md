@@ -1,132 +1,55 @@
-# คู่มือการทดสอบ SE NPRU TaskFlow Mini ด้วย Postman
+# การนำขึ้นระบบของ Backend (Render) 🚄 & ทางออกสำหรับฐานข้อมูล
 
-ไฟล์นี้จะแนะนำวิธีการทดสอบระบบ Backend แบบละเอียดทุกขั้นตอน โดยใช้ [Postman](https://www.postman.com/) ครับ
-
-**Base URL**: `http://localhost:5000/api/v1`
+เอกสารนี้จะอธิบายขั้นตอนการนำโปรเจกต์ส่วนหลังบ้าน (Node.js + Express) ขึ้นระบบ (Deploy) บนแพลตฟอร์ม Render และการแก้ปัญหาสำหรับรหัสนิสิตบน MongoDB
 
 ---
 
-## 🟢 ระบบการจัดการ Token (อ่านก่อนเริ่มเทส)
+## 🛑 ทางออก: ทำยังไงเมื่อใช้อีเมลมหาวิทยาลัยสมัคร MongoDB Atlas ไม่ได้?
 
-โปรเจกต์นี้รองรับการยืนยันตัวตนได้ 2 รูปแบบ เพื่อความสะดวกในการทดสอบด้วย Postman ครับ:
+ปัญหานี้เจอบ่อยมากสำหรับอีเมลนักศึกษา! แต่วิธีแก้ที่ง่ายที่สุด **"โดยไม่ต้องแก้โค้ดเลยแม้แต่บรรทัดเดียว"** มี 2 วิธีครับ:
 
-### แบบที่ 1: ใช้ระบบ Cookie (แนะนำ - อัตโนมัติ)
-1. เมื่อคุณยิง API `login` หรือ `register` สำเร็จระบบจะส่ง Cookie กลับมา
-2. **Postman จะจำและเก็บ Cookie ชื่อ `jwt` ไว้อัตโนมัติ** (ดูได้ที่แท็บ Cookies)
-3. เมื่อคุณยิง API เส้นอื่นๆ ต่อ (เช่น `/tasks`) คุณ **ไม่ต้องตั้งค่าอะไรเพิ่มเลย** Postman จะแนบ Cookie ให้อัตโนมัติครับ
+1. **วิธีที่ดีที่สุด (ฟรีถาวร ไม่เรื่องเยอะ):** 
+   - **ใช้อีเมลส่วนตัว (Gmail ส่วนตัวของคุณ หรือสมัคร Gmail ใหม่)** ไปกดสมัครแบบ Free Tier บน `mongodb.com` เลยครับ 
+   - สร้างโปรเจกต์ > เลือก Database แบบ Free Shared (M0) บน AWS (สิงคโปร์)
+   - แค่นี้คุณก็จะได้ `MONGO_URI` มาแปะในโปรเจกต์ได้อย่างสมบูรณ์แบบ แบบ 100% และฐานข้อมูลฟรี 512MB!
 
-### แบบที่ 2: ใช้ระบบ Bearer Token (สำหรับทดสอบเจาะจง)
-กรณีที่คุณไม่อยากใช้ Cookie อัตโนมัติ:
-1. กดยิง `/login` และก๊อปปี้ค่า `accessToken` จาก JSON ที่ได้มา
-2. ที่ API ตัวอื่นๆ ไปที่แท็บ **Authorization** ใน Postman 
-3. เลือก Type เป็น **Bearer Token** แล้ววางรหัสลงไปในช่อง Token 
+2. **วิธีแผนสำรอง (ถ้าไม่อยากสมัคร Gmail เพิ่ม):**
+   - ไปสมัครเว็บ **railway.app** (ด้วย Github)
+   - กด Create New Project -> เลือก Provision MongoDB
+   - กดดูรายละเอียดในกล่อง MongoDB มันจะให้ `Mongo Connection URI` (รูปแบบเป็น `mongodb://...`) มาเลยทันที นำค่านี้ไปใช้ใน `MONGO_URI` ของเราได้เลยครับ (ไม่มีการจำกัดเมล แต่มีข้อเสียคือใช้ฟรีได้ประมาณ 500 ชั่วโมง/เดือน ไม่ถาวรเท่า Atlas)
 
----
-
-## 👤 หมวด User / Authentication
-
-### 1. Register (สมัครสมาชิก)
-- **Method**: `POST`
-- **URL**: `http://localhost:5000/api/v1/user/register`
-- **Body** (เลือก raw -> JSON):
-```json
-{
-  "fullname": "John Doe",
-  "email": "john@example.com",
-  "password": "password123"
-}
-```
-
-### 2. Login (เข้าสู่ระบบ)
-- **Method**: `POST`
-- **URL**: `http://localhost:5000/api/v1/user/login`
-- **Body** (เลือก raw -> JSON):
-```json
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
-```
-
-### 3. Check Auth (ตรวจสอบการล็อกอิน)
-- **Method**: `GET`
-- **URL**: `http://localhost:5000/api/v1/user/check`
-- **ข้อมูลที่ต้องส่ง**: ไม่มี (ใช้ Cookie หรือ Bearer Token ดูในหัวข้อระบบการจัดการ Token)
-
-### 4. Update Profile (อัปเดตโปรไฟล์และรูปภาพ)
-- **Method**: `PUT`
-- **URL**: `http://localhost:5000/api/v1/user/update-profile`
-- **Body** (เลือก raw -> JSON):
-```json
-{
-  "fullname": "John Updated",
-  "profilePicture": "data:image/png;base64,iVBORw0KGgoAAAANS..." 
-}
-```
-*(ถ้าต้องการเทสแค่การเปลี่ยนชื่อ ให้ลบบรรทัด profilePicture ออกแล้วส่งไปแค่ fullname ได้เลยครับ)*
-
-### 5. Logout (ออกจากระบบ)
-- **Method**: **`POST`** (ห้ามเผลอใช้ GET)
-- **URL**: `http://localhost:5000/api/v1/user/logout`
-- **ข้อมูลที่ต้องส่ง**: ไม่มี
-- **หมายเหตุ**: ระบบของเราเป็นแบบ Stateless (JWT) การยิง API นี้คือการสั่งให้เบราว์เซอร์/Postman ลบทิ้ง Cookie ในเครื่องคุณเท่านั้นครับ (ไม่กระทบกับคนที่กำลังใช้ Token อื่นอยู่)
+*(สรุป: แนะนำให้ตัดปัญหาด้วยข้อ 1 ชัวร์สุดครับ!)*
 
 ---
 
-## 📝 หมวด Tasks (จัดการงาน)
+## 🛠️ ขั้นตอนการนำ Backend ขึ้น Render
 
-> **⚠️ กฎสำคัญ (System Flow): จำเป็นต้อง Login ก่อนจัดการ Task เสมอ**
->
-> เนื่องจากระบบนี้เป็น **"ระบบจัดการงานส่วนบุคคล (Personal TaskFlow)"** ทุกๆ Task จะต้องถูกผูกติดกับบัญชีผู้ใช้ (`userId`) ของคนที่สร้างมันขึ้นมาเท่านั้น
-> - หากคุณพยายามยิง API สร้างงานหรือดึงงานโดยไม่ได้ Login ระบบจะไม่รู้ว่าคุณคือใคร และจะปฏิเสธการเข้าถึงด้วย Error `401 Unauthorized` ทันที
-> - **ที่ถูกต้องคือ:** ให้ยิง API `POST /user/login` ให้สำเร็จก่อน 1 ครั้ง เพื่อให้ Postman จำ Cookie/Token มาระบุตัวตนของคุณ แล้วถึงจะสามารถมาใช้งาน API หมวด Tasks ด้านล่างนี้ได้อย่างสมบูรณ์
+1. สมัครบัญชี https://render.com/ ด้วย GitHub 
+2. นำไฟล์ทั้งโฟลเดอร์นี้อัปโหลดขึ้น GitHub เป็น Repository แยกรักษา
+3. กดปุ่ม `New` -> เครื่องหมายบวก (+) บน Render -> เลือก **Web Service**
+4. เชื่อมโยง Repository GitHub ฝั่ง Backend
+5. ตั้งค่าดังต่อไปนี้:
+   - **Name:** ตั้งชื่อ API ของคุณ (เช่น `taskflow-api`)
+   - **Environment:** Node
+   - **Build Command:** `npm install`
+   - **Start Command:** `node index.js`
 
-### 1. Get All Tasks (ดึงรายการงานทั้งหมดของตัวเอง)
-- **Method**: `GET`
-- **URL**: `http://localhost:5000/api/v1/tasks`
+## 🔐 6. การตั้งค่า Environment Variables (Environment -> Add Secret File / Add Environment Variables)
 
-### 2. Create Task (สร้างงานใหม่ หรือ โพสต์งานใหม่)
-> สำคัญ: สมมติว่า Task ของระบบนี้คือ "การสร้าง Post" ตาม Flow ที่คุณทำมานะครับ
-- **Method**: `POST`
-- **URL**: `http://localhost:5000/api/v1/tasks`
-- **วิธีการเทสใน Postman แบบ Step-by-Step**:
-  1. เปิด Postman เปิดแท็บใหม่ (เครื่องหมาย `+`)
-  2. เปลี่ยน Method ด้านซ้ายมือกดเลือกเป็น **`POST`**
-  3. ใส่ URL: `http://localhost:5000/api/v1/tasks`
-  4. ไปที่แท็บคำว่า **Body** 
-  5. เลือก **raw** และกด dropdown ด้านขวาเปลี่ยนจาก `Text` เป็น **`JSON`**
-  6. วางโค้ด JSON ด้านล่างนี้ลงไปในกล่องข้อความ:
-```json
-{
-  "title": "ทำโปรเจกต์ SE ให้เสร็จ",
-  "description": "พรุ่งนี้ต้องส่ง Requirement Backend แล้ว สู้ๆ",
-  "status": "todo",
-  "priority": "high",
-  "dueDate": "2026-03-30T23:59:00.000Z"
-}
-```
-  7. กดปุ่ม **Send** สีฟ้า
-  8. ถ้าสำเร็จ! ด้านล่างจะแสดงผลลัพธ์พร้อมสถานะ `201 Created` และรายละเอียดของ Post(Task) ที่คุณเพิ่งสร้างขึ้นมาครับ
+นี่คือจุดสำคัญ **ห้ามลืมใส่เด็ดขาด**:
+เพิ่มตัวแปร (Environment Variables) ตามนี้ลงไปใน Render:
 
-### 3. Update Task (แก้ไขงาน)
-- **Method**: `PUT`
-- **URL**: `http://localhost:5000/api/v1/tasks/:id` 
- *(นำ `_id` ของ Task ที่ได้จากการดึงข้อมูล (GET) มาใส่แทน `:id` ใน URL)*
-- **Body** (เลือก raw -> JSON):
-```json
-{
-  "status": "in-progress",
-  "priority": "medium"
-}
-```
+1. `PORT` = `5000`
+2. `BASE_URL` = `https://เว็บไซต์หน้าบ้านของคุณ.vercel.app` *(⚠️ ค่านี้สำคัญ ห้ามมีเครื่องหมาย `/` / สแลชปิดท้ายเด็ดขาด! เป็น URL ของ Frontend ฝั่ง Vercel เพื่อใช้เปิดประตู CORS ให้ Cookie คุยกันได้)*
+3. `MONGO_URI` = `mongodb+srv://user:pass@cluster.mongodb.net/taskflow?retryWrites=true&w=majority` *(นำ URL ตรงนี้มาจาก Atlas ตามวิธีด้านบน อย่าลืมเปลี่ยนชื่อผู้ใช้และรหัสผ่านให้เรียบร้อย)*
+4. `JWT_SECRET` = `(สุ่มข้อความอะไรก็ได้ที่คุณตั้งเป็นความลับ เช่น mysecretkey12345)`
+5. `NODE_ENV` = `production`
+6. `CLOUDINARY_CLOUD_NAME` = `(ของคุณ)`
+7. `CLOUDINARY_API_KEY` = `(ของคุณ)`
+8. `CLOUDINARY_API_SECRET` = `(ของคุณ)`
 
-### 4. Delete Task (ลบงาน)
-- **Method**: `DELETE`
-- **URL**: `http://localhost:5000/api/v1/tasks/:id`
- *(นำ `_id` ของ Task ที่ได้จากการดึงข้อมูล (GET) มาใส่แทน `:id` ใน URL)*
+7. กดปุ่ม **Deploy Web Service**
+8. (ข้อควรระวังบน Render): ครั้งแรกที่ Deploy สำเร็จ บน Render ระบบจะหยุดทำงานถ้านานไปแล้วไม่มีการใช้งาน ดังนั้นการเรียก API ตอนเปิดครั้งแรกอาจจะรอนานช้ากว่า Vercel ประมาณ 30 - 50 วินาที
 
----
-
-## 💡 ปัญหาที่พบบ่อย (Troubleshooting)
-- **ข้อผิดพลาด 401 Unauthorized**: เกิดจากระบบหา Token ไม่เจอ ให้ลองกดยิง API `POST /user/login` ใหม่อีกครั้ง แล้วกลับมายิง API ที่พังอีกรอบ
-- **ข้อผิดพลาด 404 / Cannot GET /...**: ตรวจสอบช่อง **Method** (GET, POST, PUT, DELETE) หน้า URL ใน Postman ให้ตรงกับคู่มือด้านบนครับ
+🔥 **ขั้นตอนสุดท้าย**
+เมื่อได้ URL ของ Backend (เช่น `https://taskflow-api.onrender.com`) อย่าลืมเอาไปใส่ในไฟล์ `vercel.json` ของฝั่ง Vercel (บรรทัด URL เป้าหมาย) แล้วพุช (Push) ขึ้น Github ของ Frontend อีกรอบ! เท่านี้ระบบหน้าบ้านหลังบ้านของคุณก็เชื่อมติดและคุยกันได้อย่างสมบูรณ์แบบครับ!

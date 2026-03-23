@@ -16,7 +16,7 @@ exports.protectedRoute = async (req, res, next) => {
         if (!token) {
             return res.status(401).json({ message: "Unauthorized - No Token provided" });
         }
-        const decoded = jwt.verify(token, process.env.SECRET); // ตรวจสอบว่า token ถูกต้องหรือไม่ โดยหาจาก token , process.env.SECRET
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); // ตรวจสอบว่า token ถูกต้องหรือไม่ โดยหาจาก token , process.env.JWT_SECRET
         if (!decoded) {
             return res.status(401).json({ message: "Unauthorized - Invalid Token" }); // token ไม่ถูกต้อง
         }
