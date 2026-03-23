@@ -1,11 +1,13 @@
 const mongoose = require('mongoose');
 
 const taskSchema = new mongoose.Schema({
+    // เรียก user ใช้งาน 
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
+    // กำหนด object ต่างๆ ที่ควรมี
     title: {
         type: String,
         required: [true, 'Please add a title'],
@@ -25,9 +27,20 @@ const taskSchema = new mongoose.Schema({
         enum: ['low', 'medium', 'high'],
         default: 'medium'
     },
+    category: {
+        type: String,
+        enum: ['work', 'personal', 'study', 'other'],
+        default: 'other'
+    },
     dueDate: {
         type: Date
-    }
+    },
+    subTasks: [
+        {
+            title: { type: String, trim: true },
+            isCompleted: { type: Boolean, default: false }
+        }
+    ]
 }, {
     timestamps: true
 });

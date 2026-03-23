@@ -37,7 +37,7 @@ exports.getTasks = async (req, res) => {
 // ฟังก์ชันนี้รับข้อมูล title, description, status, priority, dueDate
 // แล้วบันทึกลงฐานข้อมูล MongoDB โดยผูกกับ userId
 exports.createTask = async (req, res) => {
-    const { title, description, status, priority, dueDate } = req.body;
+    const { title, description, status, priority, dueDate, category, subTasks } = req.body;
     const userId = req.user._id;
 
     // ตรวจสอบว่ามีข้อมูลบังคับหรือไม่ (บังคับแค่ title ตาม Schema)
@@ -55,7 +55,9 @@ exports.createTask = async (req, res) => {
             description,
             status,
             priority,
-            dueDate
+            category,
+            dueDate,
+            subTasks
         });
 
         if (!taskDoc) {
